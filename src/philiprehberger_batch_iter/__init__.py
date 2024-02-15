@@ -12,11 +12,13 @@ from typing import TypeVar
 __all__ = [
     "batch",
     "batch_async",
+    "batch_map",
     "collect_errors",
     "BatchResult",
 ]
 
 T = TypeVar("T")
+R = TypeVar("R")
 
 
 @dataclass
@@ -101,6 +103,30 @@ async def batch_async(
 
     if current:
         yield current
+
+
+def batch_map(
+    iterable: Iterable[T],
+    size: int,
+    fn: Callable[[list[T]], list[R]],
+) -> list[R]:
+    """Process an iterable in batches, applying *fn* to each batch, returning flattened results.
+
+    Each batch is passed to *fn*, which must return a list. The
+    returned lists are concatenated into a single flat result list.
+
+    Args:
+        iterable: The iterable to split into batches.
+        size: Maximum number of items per batch.
+        fn: Callable that receives a batch and returns a list of results.
+
+    Returns:
+        A flat list of all results from every batch.
+    """
+    results: list[R] = []
+    for chunk in batch(iterable, size):
+        results.extend(fn(chunk))
+    return results
 
 
 def collect_errors(
