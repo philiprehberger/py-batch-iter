@@ -15,7 +15,7 @@ pip install philiprehberger-batch-iter
 ## Usage
 
 ```python
-from philiprehberger_batch_iter import batch, collect_errors
+from philiprehberger_batch_iter import batch, batch_map, collect_errors
 
 # Split any iterable into fixed-size batches
 for chunk in batch(range(10), size=3):
@@ -31,6 +31,17 @@ for chunk in batch(range(100), size=25, progress=True):
 # batch 1: 25 items
 # batch 2: 25 items
 # ...
+```
+
+### Batch map
+
+```python
+from philiprehberger_batch_iter import batch_map
+
+# Process items in batches and collect flattened results
+results = batch_map(range(10), size=3, fn=lambda chunk: [x * 2 for x in chunk])
+print(results)
+# [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
 ```
 
 ### Error collection
