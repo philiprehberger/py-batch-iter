@@ -1,9 +1,13 @@
 # Changelog
 
+## 0.3.0 (2026-04-28)
+
+- Add `batch_async_map(async_iterable, size, fn)` — async counterpart to `batch_map`
 
 ## 0.2.0 (2026-04-04)
 
 - Add `batch_map` function for processing batches with a mapping function
+
 ## 0.1.2 (2026-03-31)
 
 - Standardize README to 3-badge format with emoji Support section

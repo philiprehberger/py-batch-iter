@@ -1,4 +1,13 @@
-from philiprehberger_batch_iter import batch, batch_map, collect_errors, BatchResult
+import asyncio
+
+from philiprehberger_batch_iter import (
+    batch,
+    batch_async,
+    batch_async_map,
+    batch_map,
+    collect_errors,
+    BatchResult,
+)
 
 
 def test_batch_splits_list():
@@ -70,3 +79,38 @@ def test_batch_map_preserves_order():
 def test_batch_map_transform_type():
     result = batch_map(["a", "bb", "ccc"], size=2, fn=lambda chunk: [len(s) for s in chunk])
     assert result == [1, 2, 3]
+
+
+def test_batch_async_map_doubles():
+    async def src():
+        for x in range(5):
+            yield x
+
+    async def double(chunk):
+        return [x * 2 for x in chunk]
+
+    result = asyncio.run(batch_async_map(src(), size=2, fn=double))
+    assert result == [0, 2, 4, 6, 8]
+
+
+def test_batch_async_map_empty():
+    async def src():
+        if False:
+            yield 0
+
+    async def fn(chunk):
+        return chunk
+
+    result = asyncio.run(batch_async_map(src(), size=3, fn=fn))
+    assert result == []
+
+
+def test_batch_async_yields_chunks():
+    async def src():
+        for x in range(7):
+            yield x
+
+    async def collect():
+        return [c async for c in batch_async(src(), size=3)]
+
+    assert asyncio.run(collect()) == [[0, 1, 2], [3, 4, 5], [6]]

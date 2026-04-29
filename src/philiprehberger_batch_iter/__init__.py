@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import sys
 import time
-from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable, Iterator
+from collections.abc import (
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterable,
+    Iterator,
+)
 from dataclasses import dataclass, field
 from itertools import islice
 from typing import TypeVar
@@ -12,6 +19,7 @@ from typing import TypeVar
 __all__ = [
     "batch",
     "batch_async",
+    "batch_async_map",
     "batch_map",
     "collect_errors",
     "BatchResult",
@@ -126,6 +134,30 @@ def batch_map(
     results: list[R] = []
     for chunk in batch(iterable, size):
         results.extend(fn(chunk))
+    return results
+
+
+async def batch_async_map(
+    async_iterable: AsyncIterable[T],
+    size: int,
+    fn: Callable[[list[T]], Awaitable[list[R]]],
+) -> list[R]:
+    """Async counterpart to :func:`batch_map`.
+
+    Iterates *async_iterable* in batches of *size*, awaits *fn* on each batch,
+    and concatenates the returned lists into a flat result.
+
+    Args:
+        async_iterable: The async iterable to split into batches.
+        size: Maximum number of items per batch.
+        fn: Async callable that receives a batch and returns a list of results.
+
+    Returns:
+        A flat list of all results from every batch.
+    """
+    results: list[R] = []
+    async for chunk in batch_async(async_iterable, size):
+        results.extend(await fn(chunk))
     return results
 
 

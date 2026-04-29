@@ -70,12 +70,25 @@ async def process():
         await handle(chunk)
 ```
 
+### Async batch map
+
+```python
+from philiprehberger_batch_iter import batch_async_map
+
+async def upload(chunk):
+    return await api.upload_many(chunk)
+
+results = await batch_async_map(items_aiter, size=100, fn=upload)
+```
+
 ## API
 
 | Function / Class | Description |
 |------------------|-------------|
 | `batch(iterable, size, progress=False)` | Yield fixed-size batches from an iterable |
+| `batch_map(iterable, size, fn)` | Process batches with `fn` and return a flat result list |
 | `batch_async(async_iterable, size)` | Async generator yielding fixed-size batches |
+| `batch_async_map(async_iterable, size, fn)` | Async counterpart to `batch_map`, awaits each batch |
 | `collect_errors(iterable, size, fn)` | Process batches and collect errors into a result |
 | `BatchResult` | Dataclass with `processed`, `errors`, `duration_ms` |
 
