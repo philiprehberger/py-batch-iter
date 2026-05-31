@@ -1,10 +1,14 @@
 import asyncio
 
+import pytest
+
 from philiprehberger_batch_iter import (
     batch,
     batch_async,
     batch_async_map,
+    batch_filter,
     batch_map,
+    batch_reduce,
     collect_errors,
     BatchResult,
 )
@@ -114,3 +118,38 @@ def test_batch_async_yields_chunks():
         return [c async for c in batch_async(src(), size=3)]
 
     assert asyncio.run(collect()) == [[0, 1, 2], [3, 4, 5], [6]]
+
+
+def test_batch_filter_evens():
+    result = list(batch_filter(range(10), 3, lambda x: x % 2 == 0))
+    assert result == [[0, 2, 4], [6, 8]]
+
+
+def test_batch_filter_empty_iterable():
+    result = list(batch_filter([], 5, lambda x: True))
+    assert result == []
+
+
+def test_batch_filter_no_matches():
+    result = list(batch_filter([1, 3, 5], 2, lambda x: x % 2 == 0))
+    assert result == []
+
+
+def test_batch_filter_invalid_size():
+    with pytest.raises(ValueError):
+        list(batch_filter([1], 0, lambda x: True))
+
+
+def test_batch_reduce_sums():
+    result = batch_reduce(range(10), 3, lambda acc, chunk: acc + sum(chunk), 0)
+    assert result == 45
+
+
+def test_batch_reduce_empty():
+    result = batch_reduce([], 5, lambda acc, _: acc + 1, 0)
+    assert result == 0
+
+
+def test_batch_reduce_invalid_size():
+    with pytest.raises(ValueError):
+        batch_reduce([1], 0, lambda a, b: a, 0)

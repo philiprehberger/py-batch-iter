@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0 (2026-05-30)
+
+- Add `batch_filter()` for streaming filter-into-batches
+- Add `batch_reduce()` for batched accumulation without holding the full sequence
+
 ## 0.3.0 (2026-04-28)
 
 - Add `batch_async_map(async_iterable, size, fn)` — async counterpart to `batch_map`

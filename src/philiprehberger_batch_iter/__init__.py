@@ -20,13 +20,16 @@ __all__ = [
     "batch",
     "batch_async",
     "batch_async_map",
+    "batch_filter",
     "batch_map",
+    "batch_reduce",
     "collect_errors",
     "BatchResult",
 ]
 
 T = TypeVar("T")
 R = TypeVar("R")
+U = TypeVar("U")
 
 
 @dataclass
@@ -159,6 +162,72 @@ async def batch_async_map(
     async for chunk in batch_async(async_iterable, size):
         results.extend(await fn(chunk))
     return results
+
+
+def batch_filter(
+    iterable: Iterable[T],
+    size: int,
+    predicate: Callable[[T], bool],
+) -> Iterator[list[T]]:
+    """Yield batches of items for which predicate returns True.
+
+    Items are checked one-by-one. Matching items accumulate into a buffer;
+    when the buffer reaches *size*, it is yielded and reset. The final
+    partial batch is yielded at the end. Empty batches are not emitted.
+
+    Args:
+        iterable: The iterable to filter and split into batches.
+        size: Maximum number of matching items per batch.
+        predicate: Callable that returns ``True`` for items to include.
+
+    Yields:
+        Lists of up to *size* matching items.
+    """
+    if size < 1:
+        msg = "Batch size must be at least 1"
+        raise ValueError(msg)
+
+    buffer: list[T] = []
+    for item in iterable:
+        if predicate(item):
+            buffer.append(item)
+            if len(buffer) == size:
+                yield buffer
+                buffer = []
+
+    if buffer:
+        yield buffer
+
+
+def batch_reduce(
+    iterable: Iterable[T],
+    size: int,
+    fn: Callable[[U, list[T]], U],
+    initial: U,
+) -> U:
+    """Reduce over batches, calling fn(accumulator, batch) once per batch.
+
+    Returns the final accumulator. *fn* is called with each full batch
+    (size items) and once at the end with any remainder.
+
+    Args:
+        iterable: The iterable to split into batches.
+        size: Maximum number of items per batch.
+        fn: Callable invoked with ``(accumulator, batch)`` returning the
+            new accumulator.
+        initial: Starting accumulator value.
+
+    Returns:
+        The final accumulator value after all batches have been reduced.
+    """
+    if size < 1:
+        msg = "Batch size must be at least 1"
+        raise ValueError(msg)
+
+    acc = initial
+    for chunk in batch(iterable, size):
+        acc = fn(acc, chunk)
+    return acc
 
 
 def collect_errors(

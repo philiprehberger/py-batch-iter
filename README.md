@@ -60,6 +60,27 @@ print(len(result.errors))   # 2
 print(result.duration_ms)   # 0.12
 ```
 
+### Filtering and reducing in batches
+
+```python
+from philiprehberger_batch_iter import batch_filter, batch_reduce
+
+# Stream items through a predicate, yielding batches of matches
+for chunk in batch_filter(range(10), size=3, predicate=lambda x: x % 2 == 0):
+    print(chunk)
+# [0, 2, 4]
+# [6, 8]
+
+# Reduce over batches without holding the full sequence in memory
+total = batch_reduce(
+    range(10),
+    size=3,
+    fn=lambda acc, chunk: acc + sum(chunk),
+    initial=0,
+)
+print(total)  # 45
+```
+
 ### Async batching
 
 ```python
@@ -87,6 +108,8 @@ results = await batch_async_map(items_aiter, size=100, fn=upload)
 |------------------|-------------|
 | `batch(iterable, size, progress=False)` | Yield fixed-size batches from an iterable |
 | `batch_map(iterable, size, fn)` | Process batches with `fn` and return a flat result list |
+| `batch_filter(iterable, size, predicate)` | Yield batches of items matching `predicate` |
+| `batch_reduce(iterable, size, fn, initial)` | Reduce over batches, calling `fn(acc, batch)` per batch |
 | `batch_async(async_iterable, size)` | Async generator yielding fixed-size batches |
 | `batch_async_map(async_iterable, size, fn)` | Async counterpart to `batch_map`, awaits each batch |
 | `collect_errors(iterable, size, fn)` | Process batches and collect errors into a result |
